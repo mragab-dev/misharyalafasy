@@ -1,30 +1,52 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://developers.google.com/idx/guides/customize-idx-env
 { pkgs, ... }: {
   # Which nixpkgs channel to use.
-  channel = "stable-25.05";
+  channel = "stable-23.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
-  packages = [ pkgs.nodejs_20 ];
+  packages = [
+    pkgs.nodejs_20
+    pkgs.nodePackages.npm
+    pkgs.gnumake
+    pkgs.gcc
+    pkgs.jdk17
+    pkgs.gawk
+    (pkgs.google-chrome.override {
+      commandLineArgs = "--no-sandbox";
+    })
+    (pkgs.android-studio.override {
+      # This fixes a bug where android-studio can't find the JRE
+      extraJars = [ pkgs.zulu.jre ];
+    })
+    pkgs.android-tools
+  ];
   # Sets environment variables in the workspace
-  env = { EXPO_USE_FAST_RESOLVER = 1; };
+  env = {
+    JAVA_HOME = "${pkgs.jdk17}";
+  };
+
+  # IDX-specific configuration
   idx = {
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+    # Search for the extensions you want on https://open-vsx.org/
     extensions = [
-      "msjsdiag.vscode-react-native"
+      "dart-code.flutter"
+      "dart-code.dart-code"
     ];
+    # Tweak editor settings
     workspace = {
-      # Runs when a workspace is first created with this `dev.nix` file
+      # Runs when a workspace is first created
       onCreate = {
-        install =
-          "npm ci --prefer-offline --no-audit --no-progress --timing && npm i @expo/ngrok@^4.1.0 react@latest react-dom@latest react-native@latest && npm i -D @types/react@latest";
+        setup-android = ''
+          (yes | sdkmanager --licenses) && \
+            sdkmanager "build-tools;34.0.0" "platform-tools" "platforms;android-34" "system-images;android-34;google_apis;x86_64" "emulator" && \
+            (yes | avdmanager create avd -n "android" -k "system-images;android-34;google_apis;x86_64" -d "pixel_8_pro")
+        '';
       };
-      # Runs when a workspace restarted
+      # Runs when a workspace is started
       onStart = {
         android = ''
           echo -e "\033[1;33mWaiting for Android emulator to be ready...\033[0m"
           # Wait for the device connection command to finish
           adb -s emulator-5554 wait-for-device && \
-          npm run android -- --tunnel
+          npm run android
         '';
       };
     };
