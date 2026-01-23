@@ -1,7 +1,13 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+
 
 let sound: Audio.Sound | null = null;
+
+type DownloadProgressData = {
+  totalBytesWritten: number;
+  totalBytesExpectedToWrite: number;
+};
 
 const getAudioURI = (surahNumber: number) => {
   const docDir = FileSystem.documentDirectory;
@@ -9,12 +15,12 @@ const getAudioURI = (surahNumber: number) => {
   return `${docDir}surah_${surahNumber}.mp3`;
 };
 
-export const downloadAudio = async (surahNumber: number, onProgress: (progress: number) => void) => {
+export const downloadAudio = async (surahNumber: number, onProgress: (progress: number) => void): Promise<boolean> => {
   const url = `https://server8.mp3quran.net/afs/${String(surahNumber).padStart(3, '0')}.mp3`;
   const uri = getAudioURI(surahNumber);
-  if (!uri) return;
+  if (!uri) return false;
 
-  const callback: FileSystem.DownloadProgressCallback = (downloadProgress) => {
+  const callback = (downloadProgress: DownloadProgressData) => {
     const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
     onProgress(progress);
   };
@@ -30,9 +36,12 @@ export const downloadAudio = async (surahNumber: number, onProgress: (progress: 
     const downloadResult = await downloadResumable.downloadAsync();
     if (downloadResult) {
       console.log('Finished downloading to ', downloadResult.uri);
+      return true;
     }
+    return false;
   } catch (e) {
     console.error(e);
+    return false;
   }
 };
 

@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import * as audio from '@/utils/audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,14 +28,17 @@ export default function HomeScreen() {
   const [isRestoring, setIsRestoring] = useState(true);
   const [downloadedSurahs, setDownloadedSurahs] = useState<Set<number>>(new Set());
   const [downloading, setDownloading] = useState<{ [key: number]: boolean }>({});
+  const [downloadProgress, setDownloadProgress] = useState<{ [key: number]: number }>({});
   const [playbackStatus, setPlaybackStatus] = useState<AVPlaybackStatus | null>(null);
   const [activeSurah, setActiveSurah] = useState<Surah | null>(null);
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>('playOnce');
   const [sliderValue, setSliderValue] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [extraData, setExtraData] = useState(0);
 
   const appState = useRef(AppState.currentState);
   const tintColor = useThemeColor({}, 'tint');
+  const theme = useColorScheme();
 
   const updateDownloadedStatus = useCallback(async (allSurahs: Surah[]) => {
     if (allSurahs.length === 0) return;
@@ -128,8 +132,8 @@ export default function HomeScreen() {
   }, [surahs, loading, downloadedSurahs]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    const successStatus = status as AVPlaybackStatusSuccess;
     setPlaybackStatus(status);
+    const successStatus = status as AVPlaybackStatusSuccess;
     if (successStatus.isLoaded && !isSeeking) {
       const progress = successStatus.positionMillis / (successStatus.durationMillis || 1);
       setSliderValue(progress);
@@ -156,11 +160,38 @@ export default function HomeScreen() {
     }
   };
 
-  const handleDownload = async (surah: Surah) => {
-    setDownloading({ ...downloading, [surah.number]: true });
-    await audio.downloadAudio(surah.number, () => {});
-    setDownloading({ ...downloading, [surah.number]: false });
-    setDownloadedSurahs(prev => new Set(prev).add(surah.number));
+  const handleDownloadAndPlay = async (surah: Surah) => {
+    if (downloading[surah.number]) return;
+
+    setDownloading(prev => ({ ...prev, [surah.number]: true }));
+    setDownloadProgress(prev => ({ ...prev, [surah.number]: 0 }));
+    setExtraData(val => val + 1);
+
+    const onProgress = (progress: number) => {
+        setDownloadProgress(prev => ({ ...prev, [surah.number]: progress }));
+        setExtraData(val => val + 1);
+    };
+
+    const success = await audio.downloadAudio(surah.number, onProgress);
+
+    setDownloading(prev => ({ ...prev, [surah.number]: false }));
+    
+    if (success) {
+      setDownloadedSurahs(prev => new Set(prev).add(surah.number));
+      await audio.playAudio(surah.number, handlePlaybackStatusUpdate, playbackMode === 'repeat', 0);
+      setActiveSurah(surah);
+    } else {
+      Alert.alert('خطأ', 'فشل تحميل السورة. يرجى التحقق من اتصالك بالإنترنت.');
+    }
+    setExtraData(val => val + 1);
+  };
+
+  const handleDownloadAll = async () => {
+    for (const surah of surahs) {
+      if (!downloadedSurahs.has(surah.number)) {
+        await handleDownloadAndPlay(surah); 
+      }
+    }
   };
 
   const handleDelete = async (surah: Surah) => {
@@ -176,6 +207,7 @@ export default function HomeScreen() {
       newSet.delete(surah.number);
       return newSet;
     });
+    setExtraData(val => val + 1);
   };
 
   const handleDeleteAll = () => {
@@ -192,6 +224,7 @@ export default function HomeScreen() {
             await Promise.all(Array.from(downloadedSurahs).map(surahNumber => audio.deleteAudio(surahNumber)));
             setDownloadedSurahs(new Set());
             await AsyncStorage.removeItem(LAST_PLAYBACK_STATE_KEY);
+            setExtraData(val => val + 1);
           },
         },
       ]
@@ -199,9 +232,7 @@ export default function HomeScreen() {
   };
 
   const handlePlayPause = async (surah: Surah) => {
-    const isLooping = playbackMode === 'repeat';
     const currentStatus = playbackStatus as AVPlaybackStatusSuccess;
-
     if (activeSurah?.number === surah.number && currentStatus?.isLoaded) {
       if (currentStatus.isPlaying) {
         await audio.pauseAudio();
@@ -209,11 +240,7 @@ export default function HomeScreen() {
         await audio.resumeAudio();
       }
     } else {
-      let initialPosition = 0;
-      if (activeSurah?.number === surah.number && currentStatus?.isLoaded) {
-        initialPosition = currentStatus.positionMillis;
-      }
-      await audio.playAudio(surah.number, handlePlaybackStatusUpdate, isLooping, initialPosition);
+      await audio.playAudio(surah.number, handlePlaybackStatusUpdate, playbackMode === 'repeat', 0);
       setActiveSurah(surah);
     }
   };
@@ -234,30 +261,45 @@ export default function HomeScreen() {
     audio.setLooping(isLooping);
   };
 
-  const renderItem = ({ item }: { item: Surah }) => (
-    <ThemedView style={styles.itemContainer}>
-      <View style={styles.surahInfoContainer}>
-        <ThemedText style={styles.surahName}>{item.name}</ThemedText>
-        <ThemedText type="subtitle">{item.englishName}</ThemedText>
-      </View>
-      <View style={styles.actionsContainer}>
-        {downloadedSurahs.has(item.number) ? (
-          <>
-            <TouchableOpacity style={styles.actionButton} onPress={() => handlePlayPause(item)}>
-              <ThemedText style={{color: tintColor}}>{activeSurah?.number === item.number && (playbackStatus as AVPlaybackStatusSuccess)?.isPlaying ? 'وقف' : 'تشغيل'}</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item)}>
-              <ThemedText style={{color: 'red'}}>حذف</ThemedText>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleDownload(item)} disabled={downloading[item.number]}>
-            <ThemedText style={{color: tintColor}}>{downloading[item.number] ? 'جاري التحميل...' : 'تحميل'}</ThemedText>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ThemedView>
-  );
+  const renderItem = ({ item }: { item: Surah }) => {
+    const isDownloaded = downloadedSurahs.has(item.number);
+    const isDownloading = downloading[item.number];
+    const isPlaying = activeSurah?.number === item.number && (playbackStatus as AVPlaybackStatusSuccess)?.isPlaying;
+
+    const onPress = () => {
+        if (isDownloaded) {
+            handlePlayPause(item);
+        } else {
+            handleDownloadAndPlay(item);
+        }
+    }
+
+    let buttonText = isDownloaded ? (isPlaying ? 'وقف' : 'تشغيل') : 'تحميل و تشغيل';
+    if (isDownloading) {
+        const progress = downloadProgress[item.number] || 0;
+        buttonText = `جاري التحميل... ${Math.round(progress * 100)}%`;
+    }
+
+    return (
+        <ThemedView style={styles.itemContainer}>
+            <View style={styles.surahInfoContainer}>
+                <ThemedText style={styles.surahName}>{item.name}</ThemedText>
+                <ThemedText type="subtitle">{item.englishName}</ThemedText>
+            </View>
+            <View style={styles.actionsContainer}>
+                <TouchableOpacity style={styles.actionButton} onPress={onPress} disabled={isDownloading}>
+                    <ThemedText style={{ color: tintColor }}>{buttonText}</ThemedText>
+                </TouchableOpacity>
+                {isDownloaded && !isDownloading && (
+                    <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item)}>
+                        <ThemedText style={{ color: 'red' }}>حذف</ThemedText>
+                    </TouchableOpacity>
+                )}
+            </View>
+        </ThemedView>
+    );
+};
+
 
   const formatTime = (millis: number) => {
     if (!millis) return '0:00';
@@ -277,14 +319,17 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ThemedView style={styles.headerContainer}>
+        <ThemedText style={styles.headerText}>برنامج العفاسي</ThemedText>
+      </ThemedView>
       <ThemedView lightColor="#4CAF50" darkColor="#2E7D32" style={styles.bannerContainer}>
           <TouchableOpacity onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.quadravexa.salaty')}>
             <ThemedText style={styles.bannerText}>تحميل برنامج صلاتى لمواقيت الصلاة و الاذكار</ThemedText>
         </TouchableOpacity>
       </ThemedView>
       <View style={styles.mainButtonsContainer}>
-        <TouchableOpacity style={[styles.mainButton, {backgroundColor: tintColor}]} onPress={() => surahs.forEach(handleDownload)} disabled={Object.values(downloading).some(d => d)}>
-          <ThemedText style={styles.mainButtonText}>تحميل الكل</ThemedText>
+        <TouchableOpacity style={[styles.mainButton, {backgroundColor: tintColor}]} onPress={handleDownloadAll} disabled={Object.values(downloading).some(d => d)}>
+          <ThemedText style={[styles.mainButtonText, { color: theme === 'dark' ? '#000' : '#fff' }]}>تحميل الكل</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.mainButton, {backgroundColor: '#AA0000'}]} onPress={handleDeleteAll}>
           <ThemedText style={styles.mainButtonText}>حذف الكل</ThemedText>
@@ -294,6 +339,7 @@ export default function HomeScreen() {
         data={surahs}
         renderItem={renderItem}
         keyExtractor={item => item.number.toString()}
+        extraData={extraData}
         contentContainerStyle={{ paddingBottom: activeSurah ? 180 : 0 }}
       />
       {activeSurah && (playbackStatus as AVPlaybackStatusSuccess)?.isLoaded && (
@@ -336,6 +382,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerContainer: {
+    padding: 15,
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
   bannerContainer: { padding: 10, margin: 10, borderRadius: 5 },
   bannerText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
   mainButtonsContainer: { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 10 },
