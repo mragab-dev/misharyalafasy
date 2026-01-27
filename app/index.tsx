@@ -1,3 +1,4 @@
+
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -9,6 +10,7 @@ import { AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import * as Linking from 'expo-linking';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Link } from 'expo-router';
 
 interface Surah {
   number: number;
@@ -320,7 +322,13 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.headerContainer}>
+        <View style={{width: 60}} />
         <ThemedText style={styles.headerText}>برنامج العفاسي</ThemedText>
+        <Link href="/settings" asChild>
+          <TouchableOpacity style={styles.settingsButton}>
+            <ThemedText style={{ color: tintColor }}>الإعدادات</ThemedText>
+          </TouchableOpacity>
+        </Link>
       </ThemedView>
       <ThemedView lightColor="#4CAF50" darkColor="#2E7D32" style={styles.bannerContainer}>
           <TouchableOpacity onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.quadravexa.salaty')}>
@@ -383,12 +391,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerContainer: {
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  settingsButton: {
+    width: 60,
+    alignItems: 'flex-end',
   },
   bannerContainer: { padding: 10, margin: 10, borderRadius: 5 },
   bannerText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
