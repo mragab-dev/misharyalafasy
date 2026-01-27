@@ -1,7 +1,7 @@
 
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, Linking, View } from 'react-native';
 import { Link } from 'expo-router';
 
 export default function SettingsScreen() {
@@ -18,9 +18,17 @@ export default function SettingsScreen() {
 
       <ThemedView style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
 
-      <TouchableOpacity onPress={() => Linking.openURL('https://quadravexa.com')}>
-        <ThemedText style={styles.footerText}>هذا البرنامج من تطوير شركة quadravexa.com</ThemedText>
-      </TouchableOpacity>
+      <View style={styles.footerContainer}>
+        <ThemedText style={styles.footerText}>هذا البرنامج من تطوير شركه</ThemedText>
+        <TouchableOpacity onPress={() => Linking.openURL('https://www.quadravexa.com')}>
+          <ThemedText style={[styles.footerText, styles.link]}>Quadravexa.com</ThemedText>
+        </TouchableOpacity>
+        
+        <ThemedText style={[styles.footerText, { marginTop: 20 }]}>لأي استفسارات يمكنك التحدث معنا على</ThemedText>
+        <TouchableOpacity onPress={() => Linking.openURL('mailto:support@quadravexa.com')}>
+          <ThemedText style={[styles.footerText, styles.link]}>support@quadravexa.com</ThemedText>
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }
@@ -49,10 +57,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
+  footerContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
   footerText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 20,
     color: '#888',
+  },
+  link: {
+    color: '#1e90ff',
+    textDecorationLine: 'underline',
+    marginTop: 4,
   },
 });

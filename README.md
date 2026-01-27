@@ -1,54 +1,38 @@
-> Edited for use in IDX on 07/09/12
+# تطبيق استماع للقرآن الكريم بصوت الشيخ مشاري العفاسي
 
-# Welcome to your Expo app 👋
+هذا مشروع تطبيق جوال تم إنشاؤه باستخدام [Expo](https://expo.dev) للاستماع إلى تلاوات القرآن الكريم بصوت القارئ الشيخ مشاري راشد العفاسي.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
+## ابدأ مع المشروع
 
 #### Android
 
-Android previews are defined as a `workspace.onStart` hook and started as a vscode task when the workspace is opened/started.
+لمعاينة نسخة الأندرويد، اتبع الخطوات التالية:
 
-Note, if you can't find the task, either:
-- Rebuild the environment (using command palette: `IDX: Rebuild Environment`), or
-- Run `npm run android -- --tunnel` command manually run android and see the output in your terminal. The device should pick up this new command and switch to start displaying the output from it.
+- تأكد من أن معاينة الأندرويد تعمل. إذا لم تكن كذلك، يمكنك إعادة بناء البيئة باستخدام الأمر `IDX: Rebuild Environment` من لوحة الأوامر (Command Palette).
+- بدلاً من ذلك، يمكنك تشغيل الأمر `npm run android -- --tunnel` يدويًا في الطرفية (Terminal).
 
-In the output of this command/task, you'll find options to open the app in a
+ستجد في مخرجات هذا الأمر خيارات لفتح التطبيق في:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- نسخة تطوير (development build)
+- محاكي أندرويد (Android emulator)
+- تطبيق Expo Go (بيئة محدودة لتجربة التطبيقات)
 
-You'll also find options to open the app's developer menu, reload the app, and more.
+ستجد أيضًا خيارات لفتح قائمة المطورين، إعادة تحميل التطبيق، والمزيد.
 
 #### Web
 
-Web previews will be started and managred automatically. Use the toolbar to manually refresh.
+سيتم بدء وإدارة معاينات الويب تلقائيًا. استخدم شريط الأدوات للتحديث اليدوي.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+يمكنك بدء التطوير عن طريق تعديل الملفات داخل مجلد **app**. يستخدم هذا المشروع نظام التوجيه المعتمد على الملفات (file-based routing).
 
-## Get a fresh project
+## تعلم المزيد
 
-When you're ready, run:
+لمعرفة المزيد حول تطوير مشروعك باستخدام Expo، تصفح المصادر التالية:
 
-```bash
-npm run reset-project
-```
+- [توثيق Expo](https://docs.expo.dev/): تعلم الأساسيات أو تعمق في الموضوعات المتقدمة.
+- [دورة Expo التعليمية](https://docs.expo.dev/tutorial/introduction/): اتبع دورة تعليمية خطوة بخطوة لإنشاء مشروع يعمل على Android و iOS والويب.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## انضم إلى المجتمع
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# misharyalafasy
+- [Expo على GitHub](https://github.com/expo/expo): تصفح منصتنا المفتوحة المصدر وساهم فيها.
+- [مجتمع Discord](https://chat.expo.dev): تواصل مع مستخدمي Expo واطرح الأسئلة.
