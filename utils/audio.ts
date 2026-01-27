@@ -1,5 +1,6 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
+
 
 
 let sound: Audio.Sound | null = null;
