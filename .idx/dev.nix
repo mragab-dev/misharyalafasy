@@ -12,7 +12,8 @@
     (pkgs.google-chrome.override {
       commandLineArgs = "--no-sandbox";
     })
-    (pkgs.android-studio.override {
+    (
+      pkgs.android-studio.override {
       # This fixes a bug where android-studio can't find the JRE
       extraJars = [ pkgs.zulu.jre ];
     })
